@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>หลังบ้าน</title>
+<style>
+.box{background:#fff;border-radius:12px;padding:16px;margin:10px auto;max-width:1000px!important;box-shadow:0 1px 4px #0002}
+table{width:100%;border-collapse:collapse;font-size:.92rem}td,th{padding:9px 7px;border-bottom:1px solid #eee;text-align:left;vertical-align:middle}th{color:#667;font-weight:600}
+button{padding:8px 14px;border:0;border-radius:8px;background:#2f5bea;color:#fff;font:inherit;cursor:pointer;margin:2px}
+.gy{background:#7b8190}.rd{background:#d33}.ok{background:#1a9b4b}.big{width:100%;padding:12px;font-size:1.05rem}
+input,select,textarea{font:inherit;box-sizing:border-box;padding:7px 10px;border:1px solid #c5c9d6;border-radius:8px}textarea{width:100%}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.bar input[type=search]{flex:1;min-width:180px}
+.cards{display:flex;flex-wrap:wrap;gap:12px;max-width:1000px;margin:10px auto}
+.card{flex:1;min-width:280px;background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px #0002}.card h4{margin:0 0 10px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.t{background:#f1f3f9;border-radius:10px;padding:8px;text-align:center;font-size:.8rem;color:#556}.t b{display:block;font-size:1.6rem;color:#223}
+.t.w{background:#fff4dc}.t.a{background:#e1f6e9}.t.x{background:#fde5e5}
+.tag,.chip{display:inline-block;border-radius:12px;padding:2px 9px;font-size:.78rem;margin:2px 3px 2px 0;white-space:nowrap}
+.tag{color:#fff}.pending{background:#e69a00}.approved{background:#1a9b4b}.rejected{background:#d33}
+.chip{background:#eee;color:#444}.chip.pending{background:#fff4dc;color:#8a5b00}.chip.approved{background:#e1f6e9;color:#13703a}.chip.rejected{background:#fde5e5;color:#a12222}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:10px 0}
+.step,.seg label{border:2px solid #dde1ee;border-radius:10px;padding:10px;cursor:pointer;display:block}
+.step:has(input:checked){border-color:#2f5bea;background:#eef2ff}.step b{display:block;margin-bottom:4px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}.seg label{text-align:center;font-weight:600}
+.seg .sa:has(input:checked){border-color:#1a9b4b;background:#e1f6e9;color:#13703a}.seg .sr:has(input:checked){border-color:#d33;background:#fde5e5;color:#a12222}
+.step input,.seg input{display:none}.pn h3{margin:0}.sigrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0}
+</style></head><body>
+<div class="box np" id="login"><input type="password" id="pw" placeholder="รหัสผ่านผู้ดูแล"> <button onclick="pw=$('#pw').value;sessionStorage.pw=pw;load()">เข้าสู่ระบบ</button></div>
+
+<div id="main" hidden>
+ <div class="box np"><button onclick="tab(1)">📊 Dashboard</button><button class="gy" onclick="tab(2)">📝 จัดการแบบฟอร์ม</button><button class="gy" onclick="sessionStorage.pw='';localStorage.removeItem('dcache');location.reload()">ออก</button></div>
+ <div id="p1">
+  <div class="box np bar"><input type="search" id="q" placeholder="🔍 ค้นหา ชื่อ / รหัสนักศึกษา / อีเมล / รหัสอ้างอิง" oninput="rt()">
+   <select id="flt" onchange="rt()"></select>
+   <select id="ss" onchange="rt()"><option value="">ทุกสถานะ</option><option value="pending">รออนุมัติ</option><option value="approved">อนุมัติ</option><option value="rejected">ยกเลิก</option></select>
+   วันที่ <input type="date" id="d1" onchange="rt()"> ถึง <input type="date" id="d2" onchange="rt()"><button class="gy" onclick="clr()">ล้าง</button></div>
+  <div class="cards np" id="stats"></div>
+  <div class="box np" style="overflow-x:auto"><table><thead><tr><th>วันที่ส่ง</th><th>แบบฟอร์ม / ผู้ขอ</th><th>สถานะผู้อนุมัติ</th><th>ผลรวม</th><th></th></tr></thead><tbody id="tb"></tbody></table></div>
+ </div>
+ <div id="p2" hidden>
+  <div class="box np"><button onclick="edit()">+ เพิ่มแบบฟอร์ม</button><table id="fl"></table></div>
+  <div class="box np" id="ed" hidden>
+   <input id="fn" placeholder="ชื่อแบบฟอร์ม" style="width:70%"> <label><input type="checkbox" id="fa" checked> เปิดรับ</label>
+   <p><b>ผู้อนุมัติ</b> 1 บรรทัดต่อ 1 คน: <code>หัวข้อกล่อง|(ชื่อ)|ตำแหน่ง</code></p><textarea id="fp" rows="3"></textarea>
+   <p><b>เทมเพลต HTML</b> ช่องกรอก <code>{{key|text|60}}</code> <code>{{key|date|30}}</code> ชนิด text,date,tel,email,area, <code>{{key|radio|ก,ข}}</code> ลายเซ็น(+ชื่อ+วันที่) <code>{{key|sig|ป้ายชื่อ}}</code> กล่องอนุมัติ <code>{{1|appr}}</code> ต้องมีช่อง <b>email</b></p>
+   <textarea id="ft" rows="14"></textarea><button class="ok" onclick="save()">บันทึก</button><button class="gy" onclick="$('#ed').hidden=true">ปิด</button></div>
+ </div>
+</div>
+<div id="vw" hidden></div>
+<script src="paper.js"></script>
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbxwkXt331Q4vmwD2fMM9P3eeXXig2FXq2Ll0ujE5ZiT6WZnFHuHpZ4hhIK4Zx8EhYNXPg/exec'; // วาง URL Web App ที่นี่
+const $ = s => document.querySelector(s), TH = { pending: 'รออนุมัติ', approved: 'อนุมัติ', rejected: 'ยกเลิก' };
+let pw = sessionStorage.pw || '', D = {}, cur, editId;
+const call = async o => (await fetch(API, { method: 'POST', body: JSON.stringify({ ...o, pw }) })).json();
+const ld = d => { const t = new Date(d); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); };
+
+async function load() {
+  if (!pw) return;
+  if (!D.forms) { try { const c = JSON.parse(localStorage.dcache || 'null'); if (c) paint(c); } catch (e) {} } // แสดงข้อมูลที่จำไว้ทันที แล้วค่อยอัปเดต
+  const r = await call({ action: 'list' });
+  if (!r.ok) { alert(r.error); sessionStorage.pw = pw = ''; localStorage.removeItem('dcache'); $('#login').hidden = false; $('#main').hidden = true; return; }
+  try { localStorage.dcache = JSON.stringify(r); } catch (e) {}
+  paint(r);
+}
+async function openRow(id) {
+  const s = D.subs.find(x => x.id == id); if (!s) return;
+  $('#main').hidden = true; $('#vw').hidden = false; $('#vw').innerHTML = '<div class="box np">กำลังโหลดเอกสาร...</div>';
+  if (!s.d) { const r = await call({ action: 'detail', id }); if (!r.ok) { alert(r.error); return back(); } s.d = r.data; s.ap = r.approvals; }
+  view(s);
+}
+function paint(r) {
+  D = r; D.forms.forEach(f => f.ap = JSON.parse(f.approvers || '[]')); D.subs.forEach(s => s.day = ld(s.createdAt));
+  $('#login').hidden = true; $('#main').hidden = false;
+  const fv = $('#flt').value;
+  $('#flt').innerHTML = '<option value="">ทุกแบบฟอร์ม</option>' + D.forms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join(''); $('#flt').value = fv;
+  $('#fl').innerHTML = D.forms.map(f => `<tr><td>${esc(f.name)}${f.active ? '' : ' (ปิด)'}</td><td style="text-align:right">
+   <button onclick="navigator.clipboard.writeText(location.href.replace(/admin\\.html.*$/,'')+'index.html?form=${f.id}').then(()=>alert('คัดลอกลิงก์แล้ว'))">คัดลอกลิงก์</button>
+   <button class="gy" onclick="edit('${f.id}')">แก้ไข</button><button class="rd" onclick="del('${f.id}')">ลบ</button></td></tr>`).join('');
+  rt();
+}
+function flt(full) {
+  const q = $('#q').value.trim().toLowerCase(), a = $('#d1').value, b = $('#d2').value, st = $('#ss').value, f = $('#flt').value;
+  return D.subs.filter(s => (!q || s.q.includes(q)) && (!a || s.day >= a) && (!b || s.day <= b) && (!full || ((!st || s.status == st) && (!f || s.formId == f))));
+}
+const chips = (s, f) => s.ap.map((a, i) => `<span class="chip ${a.status}">${a.status == 'approved' ? '✔' : a.status == 'rejected' ? '✖' : '⏳'} ${esc(((f && f.ap[i] || {}).title || 'ผู้อนุมัติ ' + (i + 1)).replace('ความเห็นของ', ''))}</span>`).join('<br>');
+function rt() {
+  const base = flt(false);
+  $('#stats').innerHTML = D.forms.map(f => { const s = base.filter(x => x.formId == f.id), c = k => s.filter(x => x.status == k).length;
+    return `<div class="card"><h4>${esc(f.name)}</h4><div class="tiles"><div class="t"><b>${s.length}</b>ส่งมา</div><div class="t w"><b>${c('pending')}</b>รออนุมัติ</div><div class="t a"><b>${c('approved')}</b>อนุมัติ</div><div class="t x"><b>${c('rejected')}</b>ยกเลิก</div></div></div>`; }).join('');
+  $('#tb').innerHTML = flt(true).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(s => { const f = D.forms.find(x => x.id == s.formId);
+    return `<tr><td>${new Date(s.createdAt).toLocaleString('th-TH')}</td><td><b>${esc(s.name || s.email)}</b><br><small>${esc(s.formName)}</small></td><td>${chips(s, f)}</td>
+    <td><span class="tag ${s.status}">${TH[s.status]}</span></td><td><button onclick="openRow('${s.id}')">เปิด / พิจารณา</button></td></tr>`; }).join('') || '<tr><td colspan="5" style="text-align:center;color:#889">ไม่พบข้อมูล</td></tr>';
+}
+function clr() { ['#q', '#d1', '#d2', '#ss', '#flt'].forEach(i => $(i).value = ''); rt(); }
+function tab(n) { $('#p1').hidden = n != 1; $('#p2').hidden = n != 2; }
+function back() { $('#vw').hidden = true; $('#main').hidden = false; }
+
+function sp() { const i = +document.querySelector('[name=ix]:checked').value; $('#sp').src = localStorage['sig' + i] || ''; $('#sp').hidden = !localStorage['sig' + i]; }
+function view(s) {
+  const f = D.forms.find(x => x.id == s.formId);
+  if (!f) return alert('แบบฟอร์มต้นฉบับถูกลบแล้ว');
+  cur = s; $('#main').hidden = true; $('#vw').hidden = false;
+  const fi = Math.max(0, s.ap.findIndex(a => a.status == 'pending'));
+  $('#vw').innerHTML = `<div class="np box"><button class="gy" onclick="back()">← กลับ</button><button onclick="print()">🖨 พิมพ์ / บันทึก PDF</button></div>
+  <div class="np box pn"><h3>พิจารณาคำขอ <small style="font-weight:400;color:#889">รหัส ${s.id} · <span class="tag ${s.status}">${TH[s.status]}</span></small></h3>
+   <p style="margin:8px 0 0">1. เลือกตำแหน่งที่จะลงนาม</p>
+   <div class="steps">${f.ap.map((a, i) => `<label class="step"><input type="radio" name="ix" value="${i}" ${i == fi ? 'checked' : ''} onchange="sp()"><b>${esc(a.title)}</b>${chips({ ap: [s.ap[i] || { status: 'pending' }] }, { ap: [{ title: a.pos || 'สถานะ' }] })}</label>`).join('')}</div>
+   <p style="margin:8px 0 0">2. ผลการพิจารณา</p>
+   <div class="seg"><label class="sa"><input type="radio" name="st" value="approved" checked>✔ อนุมัติ</label><label class="sr"><input type="radio" name="st" value="rejected">✖ ไม่อนุมัติ</label></div>
+   <textarea id="rs" rows="2" placeholder="เหตุผล / หมายเหตุ (จะแสดงในเอกสารและส่งอีเมลถึงผู้ขอ — จำเป็นเมื่อไม่อนุมัติ)"></textarea>
+   <p style="margin:8px 0 0">3. ลายเซ็น</p>
+   <div class="sigrow"><img id="sp" height="44" hidden style="border:1px dashed #bbb;border-radius:6px;padding:2px"><input type="file" id="sf" accept="image/*" onchange="$('#sp').src=URL.createObjectURL(this.files[0]);$('#sp').hidden=false"><small style="color:#889">ไม่เลือกไฟล์ = ใช้ลายเซ็นเดิมที่เคยอัปโหลดในเครื่องนี้</small></div>
+   <button class="ok big" onclick="decide()">บันทึกผลการพิจารณา</button></div>` +
+   renderPaper({ template: f.template, approvers: f.ap }, { mode: 'view', data: s.d, approvals: s.ap });
+  sp();
+}
+async function decide() {
+  const idx = +document.querySelector('[name=ix]:checked').value, st = document.querySelector('[name=st]:checked').value, reason = $('#rs').value, fl = $('#sf').files[0];
+  const sig = fl ? await sigData(fl) : localStorage['sig' + idx];
+  if (st == 'approved' && !sig) return alert('กรุณาอัปโหลดลายเซ็น');
+  if (st == 'rejected' && !reason.trim()) return alert('กรุณาใส่เหตุผล');
+  if (sig) localStorage['sig' + idx] = sig;
+  if (!confirm('ยืนยันบันทึกผล?')) return;
+  const id = cur.id, r = await call({ action: 'decide', id, idx, status: st, reason, sig, base: location.href.replace(/admin\.html.*$/, '') });
+  if (!r.ok) return alert(r.error);
+  cur.ap = r.approvals; cur.status = r.status; view(cur); load();
+}
+
+function edit(id) {
+  editId = id; const f = D.forms.find(x => x.id == id) || D.forms[0] || { ap: [] };
+  $('#fn').value = id ? f.name : ''; $('#fa').checked = id ? !!f.active : true;
+  $('#fp').value = f.ap.map(a => [a.title, a.name, a.pos].join('|')).join('\n'); $('#ft').value = f.template || '';
+  $('#ed').hidden = false;
+}
+async function save() {
+  const ap = $('#fp').value.split('\n').filter(l => l.trim()).map(l => { const [title, name, pos] = l.split('|'); return { title, name: name || '', pos: pos || '' }; });
+  if (!$('#fn').value.trim() || !$('#ft').value.includes('{{email|')) return alert('ต้องมีชื่อฟอร์ม และช่อง {{email|email}} ในเทมเพลต');
+  const r = await call({ action: 'saveForm', form: { id: editId, name: $('#fn').value, active: $('#fa').checked, template: $('#ft').value, approvers: JSON.stringify(ap) } });
+  if (!r.ok) return alert(r.error); $('#ed').hidden = true; load();
+}
+async function del(id) { if (confirm('ลบแบบฟอร์มนี้?')) { await call({ action: 'deleteForm', id }); load(); } }
+load();
+</script></body></html>
