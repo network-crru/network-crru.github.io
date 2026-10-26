@@ -34,11 +34,38 @@ const dp = v => { v = String(v || ''); let m;
   return v ? null : ['', '', '']; };
 const dseg = (v, w) => { const p = dp(v); return p ? `<span class="DS" style="${w}">${p.map(x => `<span class="F">${x}</span>`).join('<span class="SL">/</span>')}</span>` : `<span class="F" style="${w}">${esc(v)}</span>`; };
 
+// เทมเพลตมาตรฐาน (ใช้อัตโนมัติถ้าฟอร์มในชีตยังเป็นเทมเพลตเก่า)
+const DEFAULT_TPL = `<div class="A" style="left:355px;top:55px"><img src="logo.png" style="width:70px" onerror="this.remove()"></div>
+<div class="A" style="left:46px;top:144px;width:689px;text-align:center;font-size:17px;font-weight:700;line-height:26px">แบบฟอร์มขอใช้บริการพื้นที่สร้าง Homepage<br>สำนักบริการเทคโนโลยีสารสนเทศ มหาวิทยาลัยราชภัฏเชียงราย</div>
+<div class="A" style="left:46px;top:215px;width:689px">
+<div class="R" style="justify-content:flex-end">วันที่{{date|date|144px}}</div>
+<div class="R">ชื่อ – นามสกุล (ภาษาไทย){{thName|text}}</div>
+<div class="R">ชื่อ - นามสกุล&nbsp; (ภาษาอังกฤษ){{enName|text}}</div>
+<div class="R">วัน เดือน ปี เกิด{{dob|date|236px}}</div>
+<div class="R">รหัสประจำตัวนักศึกษา{{sid|text}}</div>
+<div class="R">โปรแกรมวิชา{{prog|text|236px}}&nbsp;คณะ{{fac|text}}</div>
+<div class="R">หมายเลขบัตรประจำตัวประชาชน{{nid|text}}</div>
+<div class="R">ที่อยู่ปัจจุบัน ที่ติดต่อได้จริง{{addr|text}}</div>
+<div class="R">จังหวัด{{prov|text|170px}}&nbsp;รหัสไปรษณีย์{{zip|text|100px}}&nbsp;&nbsp;หมายเลขโทรศัพท์{{tel|tel}}</div>
+<div class="R">E-Mail Address{{email|email|503px}}</div>
+<div class="R" style="margin-top:3px">ประเภทของ&nbsp;<small>Homepage</small></div>
+{{type|radio|นำเสนอผลงาน,การเรียนการสอน,ส่วนตัว,หน่วยงาน}}
+<div class="R" style="margin-top:13px">วัตถุประสงค์ในการขอใช้บริการ</div>
+{{purpose|area}}
+<div style="margin-top:7px;white-space:nowrap">ข้าพเจ้าขอรับรองว่าข้อมูลข้างต้นเป็นความจริงและยอมรับเงื่อนไขในการขอใช้บริการทุกประการ ข้าพเจ้าจะขอรับผิดชอบ<br>ข้อมูลหรือข้อความใดที่ปรากฏบนเว็บไซต์แต่เพียงผู้เดียว</div>
+</div>
+<div class="A" style="left:46px;top:613px;font-size:12px;line-height:18px">** หมายเหตุ **</div>
+<div class="A" style="left:46px;top:629px;white-space:nowrap">- กรณีเป็นนักศึกษาต้องให้อาจารย์ที่ปรึกษารับรองด้วย<br>- สำนักวิทยบริการฯ จะคงการให้บริการพื้นที่สร้าง <small>homepage</small><br>แก่นักศึกษาเป็นระยะเวลา 1 ปี นับแต่สำเร็จการศึกษา<br>และจะดำเนินการลบข้อมูลภายหลังครบกำหนดระยะเวลาดังกล่าว</div>
+<div class="A" style="left:46px;top:786px">{{applicant|sig|ผู้ขอใช้บริการ}}</div>
+<div class="A" style="left:46px;top:917px">{{advisor|sig|อาจารย์ที่ปรึกษา/หัวหน้าหน่วยงาน}}</div>
+<div class="A" style="left:415px;top:579px">{{1|appr}}</div>
+<div class="A" style="left:415px;top:808px">{{2|appr}}</div>`;
+
 function renderPaper(form, o) {
   const edit = o.mode == 'edit', d = o.data || {}, ap = o.approvals || [];
   const W = x => x && x != 'fill' ? 'width:' + (/[a-z%]$/.test(x) ? x : x + '%') : 'flex:1;min-width:0';
   const fld = (k, t, x) => edit ? `<span class="F" style="${W(x)}"><input type="${t}" name="${k}" required></span>` : `<span class="F" style="${W(x)}">${esc(d[k])}</span>`;
-  return `<div class="paper${edit ? '' : ' view'}">` + (form.template || '').replace(/\{\{(\w+)\|(\w+)(?:\|([^}]*))?\}\}/g, (m, k, t, x) => {
+  return `<div class="paper${edit ? '' : ' view'}">` + (!form.template || /class="(hd|g)"/.test(form.template) ? DEFAULT_TPL : form.template).replace(/\{\{(\w+)\|(\w+)(?:\|([^}]*))?\}\}/g, (m, k, t, x) => {
     if (t == 'appr') {
       const A = (form.approvers || [])[k - 1] || {}, R = ap[k - 1] || {}, ck = on => `<i class="CB">${on ? '✔' : ''}</i>`;
       return `<div class="AB" style="height:${k == 1 ? 209 : 205}px"><div class="A" style="left:11px;top:9px;font-weight:700">${esc(A.title)}</div>
