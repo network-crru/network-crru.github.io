@@ -7,6 +7,7 @@ button{padding:8px 14px;border:0;border-radius:8px;background:#2f5bea;color:#fff
 .gy{background:#7b8190}.rd{background:#d33}.ok{background:#1a9b4b}.big{width:100%;padding:12px;font-size:1.05rem}
 input,select,textarea{font:inherit;box-sizing:border-box;padding:7px 10px;border:1px solid #c5c9d6;border-radius:8px}textarea{width:100%}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.bar input[type=search]{flex:1;min-width:180px}
+.ttl{max-width:1000px;margin:14px auto 0;font-size:1.35rem;font-weight:700;color:#223}
 .cards{display:flex;flex-wrap:wrap;gap:12px;max-width:1000px;margin:10px auto}
 .card{flex:1;min-width:280px;background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px #0002}.card h4{margin:0 0 10px}
 .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.t{background:#f1f3f9;border-radius:10px;padding:8px;text-align:center;font-size:.8rem;color:#556}.t b{display:block;font-size:1.6rem;color:#223}
@@ -26,6 +27,7 @@ input,select,textarea{font:inherit;box-sizing:border-box;padding:7px 10px;border
 <div id="main" hidden>
  <div class="box np"><button onclick="tab(1)">📊 Dashboard</button><button class="gy" onclick="tab(2)">📝 จัดการแบบฟอร์ม</button><button class="gy" onclick="sessionStorage.pw='';localStorage.removeItem('dcache');location.reload()">ออก</button></div>
  <div id="p1">
+  <div class="ttl" id="ttl">ทุกแบบฟอร์ม</div>
   <div class="box np bar"><input type="search" id="q" placeholder="🔍 ค้นหา ชื่อ / รหัสนักศึกษา / อีเมล / รหัสอ้างอิง" oninput="rt()">
    <select id="flt" onchange="rt()"></select>
    <select id="ss" onchange="rt()"><option value="">ทุกสถานะ</option><option value="pending">รออนุมัติ</option><option value="approved">อนุมัติ</option><option value="rejected">ยกเลิก</option></select>
@@ -82,8 +84,11 @@ function flt(full) {
 const chips = (s, f) => s.ap.map((a, i) => `<span class="chip ${a.status}">${a.status == 'approved' ? '✔' : a.status == 'rejected' ? '✖' : '⏳'} ${esc(((f && f.ap[i] || {}).title || 'ผู้อนุมัติ ' + (i + 1)).replace('ความเห็นของ', ''))}</span>`).join('<br>');
 function rt() {
   const base = flt(false);
-  $('#stats').innerHTML = D.forms.map(f => { const s = base.filter(x => x.formId == f.id), c = k => s.filter(x => x.status == k).length;
-    return `<div class="card"><h4>${esc(f.name)}</h4><div class="tiles"><div class="t"><b>${s.length}</b>ส่งมา</div><div class="t w"><b>${c('pending')}</b>รออนุมัติ</div><div class="t a"><b>${c('approved')}</b>อนุมัติ</div><div class="t x"><b>${c('rejected')}</b>ยกเลิก</div></div></div>`; }).join('');
+  const sel = $('#flt').value, tl = s => { const c = k => s.filter(x => x.status == k).length;
+    return `<div class="tiles"><div class="t"><b>${s.length}</b>ส่งมา</div><div class="t w"><b>${c('pending')}</b>รออนุมัติ</div><div class="t a"><b>${c('approved')}</b>อนุมัติ</div><div class="t x"><b>${c('rejected')}</b>ยกเลิก</div></div>`; };
+  $('#ttl').textContent = sel ? (D.forms.find(f => f.id == sel) || {}).name : 'ทุกแบบฟอร์ม';
+  $('#stats').innerHTML = `<div class="card" style="flex-basis:100%">${tl(base.filter(x => !sel || x.formId == sel))}</div>` +
+    (sel || D.forms.length < 2 ? '' : D.forms.map(f => `<div class="card"><h4>${esc(f.name)}</h4>${tl(base.filter(x => x.formId == f.id))}</div>`).join(''));
   $('#tb').innerHTML = flt(true).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(s => { const f = D.forms.find(x => x.id == s.formId);
     return `<tr><td>${new Date(s.createdAt).toLocaleString('th-TH')}</td><td><b>${esc(s.name || s.email)}</b><br><small>${esc(s.formName)}</small></td><td>${chips(s, f)}</td>
     <td><span class="tag ${s.status}">${TH[s.status]}</span></td><td><button onclick="openRow('${s.id}')">เปิด / พิจารณา</button></td></tr>`; }).join('') || '<tr><td colspan="5" style="text-align:center;color:#889">ไม่พบข้อมูล</td></tr>';
@@ -98,7 +103,7 @@ function view(s) {
   if (!f) return alert('แบบฟอร์มต้นฉบับถูกลบแล้ว');
   cur = s; $('#main').hidden = true; $('#vw').hidden = false;
   const fi = Math.max(0, s.ap.findIndex(a => a.status == 'pending'));
-  $('#vw').innerHTML = `<div class="np box"><button class="gy" onclick="back()">← กลับ</button><button onclick="print()">🖨 พิมพ์ / บันทึก PDF</button></div>
+  $('#vw').innerHTML = `<div class="np box"><button class="gy" onclick="back()">← กลับ</button><button onclick="print()">🖨 พิมพ์</button><button id="pdfbtn" class="ok" onclick="savePdf('form-'+cur.id)">⬇ ดาวน์โหลด PDF</button></div>
   <div class="np box pn"><h3>พิจารณาคำขอ <small style="font-weight:400;color:#889">รหัส ${s.id} · <span class="tag ${s.status}">${TH[s.status]}</span></small></h3>
    <p style="margin:8px 0 0">1. เลือกตำแหน่งที่จะลงนาม</p>
    <div class="steps">${f.ap.map((a, i) => `<label class="step"><input type="radio" name="ix" value="${i}" ${i == fi ? 'checked' : ''} onchange="sp()"><b>${esc(a.title)}</b>${chips({ ap: [s.ap[i] || { status: 'pending' }] }, { ap: [{ title: a.pos || 'สถานะ' }] })}</label>`).join('')}</div>

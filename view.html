@@ -3,14 +3,14 @@
 <body><div id="r" class="np">กำลังโหลด...</div>
 <script src="paper.js"></script>
 <script>
-const API = 'YOUR_WEB_APP_URL'; // วาง URL Web App ที่นี่
+const API = 'https://script.google.com/macros/s/AKfycbxwkXt331Q4vmwD2fMM9P3eeXXig2FXq2Ll0ujE5ZiT6WZnFHuHpZ4hhIK4Zx8EhYNXPg/exec'; // วาง URL Web App ที่นี่
 (async () => {
   const q = new URLSearchParams(location.search), R = document.getElementById('r');
   try {
     const r = await (await fetch(`${API}?action=doc&id=${q.get('id')}&t=${q.get('t')}`)).json();
     if (!r.ok) return R.textContent = r.error;
     R.className = '';
-    R.innerHTML = '<div class="np" style="text-align:center"><button onclick="print()" style="padding:10px 20px;font:inherit;background:#2f5bea;color:#fff;border:0;border-radius:8px;cursor:pointer">🖨 พิมพ์ / บันทึก PDF</button></div>' + renderPaper(r.form, { mode: 'view', data: r.data, approvals: r.approvals });
+    R.innerHTML = '<div class="np" style="text-align:center"><button onclick="print()" style="padding:10px 20px;font:inherit;background:#2f5bea;color:#fff;border:0;border-radius:8px;cursor:pointer">🖨 พิมพ์</button> <button id="pdfbtn" onclick="savePdf()" style="padding:10px 20px;font:inherit;background:#1a9b4b;color:#fff;border:0;border-radius:8px;cursor:pointer">⬇ ดาวน์โหลด PDF</button></div>' + renderPaper(r.form, { mode: 'view', data: r.data, approvals: r.approvals });
   } catch (e) { R.textContent = 'โหลดไม่สำเร็จ'; }
 })();
 </script></body></html>
