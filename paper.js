@@ -3,8 +3,8 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;
 document.head.insertAdjacentHTML('beforeend', `<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet"><style>
 body{font-family:Sarabun,'Leelawadee UI',Tahoma,sans-serif;background:#e9ebf0;margin:0;padding:10px}
 .np{margin:6px auto;max-width:794px}
-.paper{position:relative;width:794px;height:1122px;margin:10px auto;background:#fff;box-shadow:0 2px 10px #0003;font-size:14px;line-height:21px;color:#000;overflow:hidden;text-align:left}
-.paper small{font-size:11px}
+.paper{position:relative;width:794px;height:1122px;margin:10px auto;background:#fff;box-shadow:0 2px 10px #0003;font-size:var(--fs,12.5px);line-height:21px;color:#000;overflow:hidden;text-align:left}
+.paper small{font-size:.75em}
 .R{display:flex;align-items:flex-start;height:21px;line-height:21px;white-space:nowrap}
 .F{position:relative;display:block;height:16px;box-sizing:border-box;border-bottom:1px dotted #000;margin-left:2px;white-space:nowrap}
 .F>input,.AR>textarea{position:absolute;left:0;top:0;width:100%;height:21px;box-sizing:border-box;border:0;background:#f1f5ff;padding:0 2px;font:inherit;line-height:21px;outline:0;color:#000}
@@ -12,9 +12,9 @@ body{font-family:Sarabun,'Leelawadee UI',Tahoma,sans-serif;background:#e9ebf0;ma
 .A{position:absolute}
 .LB{margin-left:2px}
 .DS{display:flex;margin-left:2px}.DS .F{flex:1;margin:0;text-align:center}.DS .F:last-child{flex:1.2}.SL{padding:0 2px}
-.AR{position:relative;height:43px;margin-top:-9px}
+.AR{position:relative;height:46px;margin-top:-9px}
 .AR i{position:absolute;left:0;right:0;border-bottom:1px dotted #000}
-.AR>div,.AR>textarea{position:absolute;left:0;top:0;width:100%;height:47px;padding:5px 0 0;overflow:hidden;resize:none;line-height:21px;font:inherit;line-height:21px;box-sizing:border-box;border:0;background:none}
+.AR>div,.AR>textarea{position:absolute;left:0;top:0;width:100%;height:50px;padding:8px 0 0;overflow:hidden;resize:none;line-height:21px;font:inherit;line-height:21px;box-sizing:border-box;border:0;background:none}
 .AR>textarea{background:#f1f5ff}
 .RO{display:inline-flex;align-items:center;height:24px;position:relative;white-space:nowrap}
 .RO input{position:absolute;opacity:0;left:10px;top:10px}
@@ -35,9 +35,9 @@ const dp = v => { v = String(v || ''); let m;
 const dseg = (v, w) => { const p = dp(v); return p ? `<span class="DS" style="${w}">${p.map(x => `<span class="F">${x}</span>`).join('<span class="SL">/</span>')}</span>` : `<span class="F" style="${w}">${esc(v)}</span>`; };
 
 // เทมเพลตมาตรฐาน (ใช้อัตโนมัติถ้าฟอร์มในชีตยังเป็นเทมเพลตเก่า)
-const DEFAULT_TPL = `<div class="A" style="left:355px;top:55px"><img src="logo.png" style="width:70px" onerror="this.remove()"></div>
-<div class="A" style="left:46px;top:144px;width:689px;text-align:center;font-size:17px;font-weight:700;line-height:26px">แบบฟอร์มขอใช้บริการพื้นที่สร้าง Homepage<br>สำนักบริการเทคโนโลยีสารสนเทศ มหาวิทยาลัยราชภัฏเชียงราย</div>
-<div class="A" style="left:46px;top:215px;width:689px">
+const DEFAULT_TPL = `<div class="A" style="left:356px;top:55px"><img src="logo.png" style="width:70px" onerror="this.remove()"></div>
+<div class="A" style="left:46px;top:143px;width:692px;text-align:center;font-size:var(--ft,17px);font-weight:700;line-height:27px">แบบฟอร์มขอใช้บริการพื้นที่สร้าง Homepage<br>สำนักบริการเทคโนโลยีสารสนเทศ มหาวิทยาลัยราชภัฏเชียงราย</div>
+<div class="A" style="left:46px;top:216px;width:689px">
 <div class="R" style="justify-content:flex-end">วันที่{{date|date|144px}}</div>
 <div class="R">ชื่อ – นามสกุล (ภาษาไทย){{thName|text}}</div>
 <div class="R">ชื่อ - นามสกุล&nbsp; (ภาษาอังกฤษ){{enName|text}}</div>
@@ -48,16 +48,16 @@ const DEFAULT_TPL = `<div class="A" style="left:355px;top:55px"><img src="logo.p
 <div class="R">ที่อยู่ปัจจุบัน ที่ติดต่อได้จริง{{addr|text}}</div>
 <div class="R">จังหวัด{{prov|text|170px}}&nbsp;รหัสไปรษณีย์{{zip|text|100px}}&nbsp;&nbsp;หมายเลขโทรศัพท์{{tel|tel}}</div>
 <div class="R">E-Mail Address{{email|email|503px}}</div>
-<div class="R" style="margin-top:3px">ประเภทของ&nbsp;<small>Homepage</small></div>
+<div class="R" style="margin-top:1px">ประเภทของ&nbsp;<small>Homepage</small></div>
 {{type|radio|นำเสนอผลงาน,การเรียนการสอน,ส่วนตัว,หน่วยงาน}}
-<div class="R" style="margin-top:13px">วัตถุประสงค์ในการขอใช้บริการ</div>
+<div class="R" style="margin-top:17px">วัตถุประสงค์ในการขอใช้บริการ</div>
 {{purpose|area}}
-<div style="margin-top:7px;white-space:nowrap">ข้าพเจ้าขอรับรองว่าข้อมูลข้างต้นเป็นความจริงและยอมรับเงื่อนไขในการขอใช้บริการทุกประการ ข้าพเจ้าจะขอรับผิดชอบ<br>ข้อมูลหรือข้อความใดที่ปรากฏบนเว็บไซต์แต่เพียงผู้เดียว</div>
+<div style="margin-top:6px;white-space:nowrap">ข้าพเจ้าขอรับรองว่าข้อมูลข้างต้นเป็นความจริงและยอมรับเงื่อนไขในการขอใช้บริการทุกประการ ข้าพเจ้าจะขอรับผิดชอบ<br>ข้อมูลหรือข้อความใดที่ปรากฏบนเว็บไซต์แต่เพียงผู้เดียว</div>
 </div>
-<div class="A" style="left:46px;top:613px;font-size:12px;line-height:18px">** หมายเหตุ **</div>
-<div class="A" style="left:46px;top:629px;white-space:nowrap">- กรณีเป็นนักศึกษาต้องให้อาจารย์ที่ปรึกษารับรองด้วย<br>- สำนักวิทยบริการฯ จะคงการให้บริการพื้นที่สร้าง <small>homepage</small><br>แก่นักศึกษาเป็นระยะเวลา 1 ปี นับแต่สำเร็จการศึกษา<br>และจะดำเนินการลบข้อมูลภายหลังครบกำหนดระยะเวลาดังกล่าว</div>
-<div class="A" style="left:46px;top:786px">{{applicant|sig|ผู้ขอใช้บริการ}}</div>
-<div class="A" style="left:46px;top:917px">{{advisor|sig|อาจารย์ที่ปรึกษา/หัวหน้าหน่วยงาน}}</div>
+<div class="A" style="left:46px;top:611px;line-height:20px">** หมายเหตุ **</div>
+<div class="A" style="left:46px;top:632px;white-space:nowrap">- กรณีเป็นนักศึกษาต้องให้อาจารย์ที่ปรึกษารับรองด้วย<br>- สำนักวิทยบริการฯ จะคงการให้บริการพื้นที่สร้าง <small>homepage</small><br>แก่นักศึกษาเป็นระยะเวลา 1 ปี นับแต่สำเร็จการศึกษา<br>และจะดำเนินการลบข้อมูลภายหลังครบกำหนดระยะเวลาดังกล่าว</div>
+<div class="A" style="left:46px;top:788px">{{applicant|sig|ผู้ขอใช้บริการ}}</div>
+<div class="A" style="left:46px;top:918px">{{advisor|sig|อาจารย์ที่ปรึกษา/หัวหน้าหน่วยงาน}}</div>
 <div class="A" style="left:415px;top:579px">{{1|appr}}</div>
 <div class="A" style="left:415px;top:808px">{{2|appr}}</div>`;
 
@@ -77,8 +77,8 @@ function renderPaper(form, o) {
     if (t == 'sig') return `<div class="R">ลงชื่อ<span class="F" style="width:130px">${edit ? `<input type="file" name="${k}" accept="image/*" required onchange="this.nextElementSibling.src=URL.createObjectURL(this.files[0])"><img class="SG PV">` : d[k] ? `<img class="SG" src="${d[k]}">` : ''}</span><span class="LB">${esc(x)}</span></div>
 <div class="R" style="height:19px;margin-left:24px">(${fld(k + 'Name', 'text', '126px')})</div>
 <div class="R" style="height:19px;margin-left:24px">${edit ? `<span class="F" style="width:128px"><input type="date" name="${k}Date" required style="font-size:11px"></span>` : dseg(d[k + 'Date'], 'width:128px')}</div>`;
-    if (t == 'radio') return `<div class="R" style="height:24px;align-items:center">` + (x || '').split(',').map((s, i) => `<label class="RO" style="width:${[157, 161, 107][i] ? [157, 161, 107][i] + 'px' : 'auto'}">${edit ? `<input type="radio" name="${k}" value="${esc(s)}" ${i ? '' : 'required'}>` : ''}<i><b${!edit && d[k] == s ? ' class="on"' : ''}></b></i>${esc(s)}</label>`).join('') + `</div>`;
-    if (t == 'area') return `<div class="AR"><i style="top:21px"></i><i style="top:42px"></i>${edit ? `<textarea name="${k}" maxlength="200" required></textarea>` : `<div>${esc(d[k])}</div>`}</div>`;
+    if (t == 'radio') return `<div class="R" style="height:24px;align-items:center;margin-top:-2px">` + (x || '').split(',').map((s, i) => `<label class="RO" style="width:${[163, 147, 112][i] ? [163, 147, 112][i] + 'px' : 'auto'}">${edit ? `<input type="radio" name="${k}" value="${esc(s)}" ${i ? '' : 'required'}>` : ''}<i><b${!edit && d[k] == s ? ' class="on"' : ''}></b></i>${esc(s)}</label>`).join('') + `</div>`;
+    if (t == 'area') return `<div class="AR"><i style="top:24px"></i><i style="top:45px"></i>${edit ? `<textarea name="${k}" maxlength="200" required></textarea>` : `<div>${esc(d[k])}</div>`}</div>`;
     if (t == 'date') return edit ? `<span class="F" style="${W(x)}"><input name="${k}" required inputmode="numeric" maxlength="10" pattern="\\d{2}/\\d{2}/\\d{4}" placeholder="วว/ดด/ปปปป" oninput="fmtD(this)"></span>` : dseg(d[k], W(x));
     return fld(k, t, x);
   }) + `</div>`;
@@ -120,3 +120,14 @@ async function savePdf(name) {
   } catch (e) { fitPaper(); alert('สร้าง PDF ไม่สำเร็จ ลองใช้ปุ่มพิมพ์แล้วเลือก Save as PDF แทน'); }
   if (b) { b.disabled = false; b.textContent = '⬇ ดาวน์โหลด PDF'; }
 }
+
+// ปรับขนาดตัวอักษรให้ความกว้างบรรทัดเท่าต้นแบบ (ต้นแบบใช้ TH Sarabun PSK ซึ่งเล็กกว่า Sarabun)
+function calib() {
+  const m = (t, css) => { const s = document.createElement('span'); s.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:' + css; s.textContent = t; document.body.appendChild(s); const w = s.getBoundingClientRect().width; s.remove(); return w; };
+  const f = "Sarabun,'Leelawadee UI',Tahoma,sans-serif", r = document.documentElement.style, c = v => Math.max(9, Math.min(24, v));
+  const a = m('ข้าพเจ้าขอรับรองว่าข้อมูลข้างต้นเป็นความจริงและยอมรับเงื่อนไขในการขอใช้บริการทุกประการ ข้าพเจ้าจะขอรับผิดชอบ', '14px ' + f);
+  const b = m('สำนักบริการเทคโนโลยีสารสนเทศ มหาวิทยาลัยราชภัฏเชียงราย', '700 20px ' + f);
+  if (a) r.setProperty('--fs', c(14 * 583 / a).toFixed(2) + 'px');
+  if (b) r.setProperty('--ft', c(20 * 412 / b).toFixed(2) + 'px');
+}
+calib(); document.fonts.load('14px Sarabun').then(calib, calib); document.fonts.load('700 20px Sarabun').then(calib, calib); document.fonts.ready.then(calib);
