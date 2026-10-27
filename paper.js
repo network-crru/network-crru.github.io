@@ -66,6 +66,24 @@ const DEFAULT_TPL = `<div class="A" style="left:356px;top:55px"><img src="logo.p
 <div class="A" style="left:415px;top:579px">{{1|appr}}</div>
 <div class="A" style="left:415px;top:808px">{{2|appr}}</div>`;
 
+// ช่องกรอกมาตรฐาน (ใช้เมื่อฟอร์มในชีตยังไม่มี fields) ฟอร์มอื่นกำหนดเองได้ใน Forms > fields
+// t: text|tel|email|date|area|radio|select|check  w:'f' = เต็มแถว  r:false = ไม่บังคับ  o = ตัวเลือก(คั่น ,)  max = ความยาวสูงสุด
+const DEFAULT_FIELDS = { sections: [
+  { title: 'ข้อมูลผู้ขอใช้บริการ', sub: 'กรอกข้อมูลตามความเป็นจริง', fields: [
+    { k: 'thName', l: 'ชื่อ – นามสกุล (ภาษาไทย)', t: 'text', w: 'f' }, { k: 'enName', l: 'ชื่อ - นามสกุล (ภาษาอังกฤษ)', t: 'text', w: 'f' },
+    { k: 'dob', l: 'วัน เดือน ปี เกิด', t: 'date' }, { k: 'sid', l: 'รหัสประจำตัวนักศึกษา', t: 'text' },
+    { k: 'prog', l: 'โปรแกรมวิชา', t: 'text' }, { k: 'fac', l: 'คณะ', t: 'text' },
+    { k: 'nid', l: 'หมายเลขบัตรประจำตัวประชาชน', t: 'text', max: 13 }, { k: 'tel', l: 'หมายเลขโทรศัพท์', t: 'tel' },
+    { k: 'addr', l: 'ที่อยู่ปัจจุบัน ที่ติดต่อได้จริง', t: 'area', w: 'f', max: 120 },
+    { k: 'prov', l: 'จังหวัด', t: 'text' }, { k: 'zip', l: 'รหัสไปรษณีย์', t: 'text', max: 5 },
+    { k: 'email', l: 'E-Mail Address (ใช้รับแจ้งผลการพิจารณา)', t: 'email', w: 'f' }] },
+  { title: 'รายละเอียดการขอใช้บริการ', sub: 'ระบุประเภทและวัตถุประสงค์', fields: [
+    { k: 'type', l: 'ประเภทของ Homepage', t: 'radio', o: 'นำเสนอผลงาน,การเรียนการสอน,ส่วนตัว,หน่วยงาน' },
+    { k: 'purpose', l: 'วัตถุประสงค์ในการขอใช้บริการ', t: 'area', w: 'f', max: 200 },
+    { k: 'date', l: 'วันที่', t: 'date' },
+    { k: 'agree', l: 'ข้าพเจ้าขอรับรองว่าข้อมูลข้างต้นเป็นความจริงและยอมรับเงื่อนไขในการขอใช้บริการทุกประการ ข้าพเจ้าจะขอรับผิดชอบข้อมูลหรือข้อความใดที่ปรากฏบนเว็บไซต์แต่เพียงผู้เดียว', t: 'check' }] }],
+  note: 'หมายเหตุ: กรณีเป็นนักศึกษาต้องให้อาจารย์ที่ปรึกษารับรองด้วย · สำนักวิทยบริการฯ จะคงการให้บริการพื้นที่สร้าง homepage แก่นักศึกษาเป็นระยะเวลา 1 ปี นับแต่สำเร็จการศึกษา และจะดำเนินการลบข้อมูลภายหลังครบกำหนดระยะเวลาดังกล่าว' };
+
 function renderPaper(form, o) {
   const edit = o.mode == 'edit', d = o.data || {}, ap = o.approvals || [];
   const W = x => x && x != 'fill' ? 'width:' + (/[a-z%]$/.test(x) ? x : x + '%') : 'flex:1;min-width:0';
@@ -76,12 +94,12 @@ function renderPaper(form, o) {
       return `<div class="AB" style="height:${k == 1 ? 209 : 205}px"><div class="A" style="left:11px;top:9px;font-weight:700">${esc(A.title)}</div>
 <div class="A" style="left:37px;top:36px">${ck(R.status == 'approved')}อนุมัติ</div><div class="A" style="left:122px;top:36px">${ck(R.status == 'rejected')}ไม่อนุมัติ</div>
 <div class="A F" style="left:11px;width:275px;top:61px;margin:0">${esc(R.reason)}</div><div class="A F" style="left:11px;width:275px;top:84px;margin:0"></div>
-<div class="A R" style="left:46px;top:131px">ลงชื่อ<span class="F" style="width:178px">${R.sig ? `<img class="SG" src="${R.sig}">` : ''}</span></div>
+<div class="A R" style="left:46px;top:131px">ลงชื่อ<span class="F" style="width:178px"></span></div>
 <div class="A" style="left:0;right:0;top:156px;text-align:center">${esc(A.name)}</div><div class="A" style="left:0;right:0;top:181px;text-align:center">${esc(A.pos)}</div></div>`;
     }
-    if (t == 'sig') return `<div class="R">ลงชื่อ<span class="F" style="width:130px">${edit ? `<input type="file" name="${k}" accept="image/*" required onchange="this.nextElementSibling.src=URL.createObjectURL(this.files[0])"><img class="SG PV">` : d[k] ? `<img class="SG" src="${d[k]}">` : ''}</span><span class="LB">${esc(x)}</span></div>
-<div class="R" style="height:19px;margin-left:24px">(${fld(k + 'Name', 'text', '126px')})</div>
-<div class="R" style="height:19px;margin-left:24px">${edit ? `<span class="F" style="width:128px"><input name="${k}Date" required inputmode="numeric" maxlength="10" pattern="\\d{2}/\\d{2}/\\d{4}" placeholder="วว/ดด/ปปปป" oninput="fmtD(this)"></span>` : dseg(d[k + 'Date'], 'width:128px')}</div>`;
+    if (t == 'sig') return `<div class="R">ลงชื่อ<span class="F" style="width:130px"></span><span class="LB">${esc(x)}</span></div>
+<div class="R" style="height:19px;margin-left:24px">(<span class="F" style="width:126px"></span>)</div>
+<div class="R" style="height:19px;margin-left:24px">${dseg('', 'width:128px')}</div>`; // ช่องลงชื่อเป็นเส้นประว่างตามต้นแบบ (ไม่มีลายเซ็นอิเล็กทรอนิกส์)
     if (t == 'radio') return `<div class="R" style="height:24px;align-items:center;margin-top:-2px">` + (x || '').split(',').map((s, i) => `<label class="RO" style="width:${[163, 147, 112][i] ? [163, 147, 112][i] + 'px' : 'auto'}">${edit ? `<input type="radio" name="${k}" value="${esc(s)}" ${i ? '' : 'required'}>` : ''}<i><b${!edit && d[k] == s ? ' class="on"' : ''}></b></i>${esc(s)}</label>`).join('') + `</div>`;
     if (t == 'area') return `<div class="AR"><i style="top:24px"></i><i style="top:45px"></i>${edit ? `<textarea name="${k}" maxlength="200" required></textarea>` : `<div>${esc(d[k])}</div>`}</div>`;
     if (t == 'date') return edit ? `<span class="F" style="${W(x)}"><input name="${k}" required inputmode="numeric" maxlength="10" pattern="\\d{2}/\\d{2}/\\d{4}" placeholder="วว/ดด/ปปปป" oninput="fmtD(this)"></span>` : dseg(d[k], W(x));

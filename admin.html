@@ -42,6 +42,7 @@ input,select,textarea{font:inherit;box-sizing:border-box;padding:7px 10px;border
   <div class="box np" id="ed" hidden>
    <input id="fn" placeholder="ชื่อแบบฟอร์ม" style="width:70%"> <label><input type="checkbox" id="fa" checked> เปิดรับ</label>
    <p><b>ผู้อนุมัติ</b> 1 บรรทัดต่อ 1 คน: <code>หัวข้อกล่อง|(ชื่อ)|ตำแหน่ง</code></p><textarea id="fp" rows="3"></textarea>
+   <p><b>ช่องกรอกหน้าเว็บ (JSON)</b> แต่ละฟอร์มกำหนดได้เอง เช่น เพิ่ม/ตัดช่องที่อยู่ ดูตัวอย่างจากฟอร์มเดิม</p><textarea id="ffl" rows="10" style="font-family:monospace;font-size:12px"></textarea>
    <p><b>เทมเพลต HTML</b> ช่องกรอก <code>{{key|text|60}}</code> <code>{{key|date|30}}</code> ชนิด text,date,tel,email,area, <code>{{key|radio|ก,ข}}</code> ลายเซ็น(+ชื่อ+วันที่) <code>{{key|sig|ป้ายชื่อ}}</code> กล่องอนุมัติ <code>{{1|appr}}</code> ต้องมีช่อง <b>email</b></p>
    <textarea id="ft" rows="14"></textarea><button class="ok" onclick="save()">บันทึก</button><button class="gy" onclick="$('#ed').hidden=true">ปิด</button></div>
  </div>
@@ -106,7 +107,7 @@ function tab(n) { $('#p1').hidden = n != 1; $('#p2').hidden = n != 2; $('#p3').h
 function toast(m) { const e = document.createElement('div'); e.className = 'toast'; e.textContent = m; document.body.appendChild(e); setTimeout(() => e.remove(), 6000); }
 // ตรวจการเปลี่ยนแปลงทุก 20 วินาที (เบา) ถ้ามีคำขอใหม่/มีการพิจารณา จึงโหลดรายการใหม่เอง
 async function tick() { if (document.hidden || !pw || ver === null) return; try { const r = await call({ action: 'ver' }); if (r.ok && r.v !== ver) await load(); } catch (e) {} }
-setInterval(tick, 30 * 60 * 1000); document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+setInterval(tick, 20000); document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
 // ---- อีเมลแจ้งเตือน ----
 async function loadN() { $('#nl').textContent = 'กำลังโหลด...'; try { const r = await call({ action: 'getNotify' }); NL = r.ok ? r.emails : []; } catch (e) { NL = []; } renderN(); }
 function renderN() {
@@ -119,7 +120,6 @@ async function saveN() {
 }
 function back() { $('#vw').hidden = true; $('#main').hidden = false; }
 
-function sp() { const i = +document.querySelector('[name=ix]:checked').value; $('#sp').src = localStorage['sig' + i] || ''; $('#sp').hidden = !localStorage['sig' + i]; }
 function view(s) {
   const f = D.forms.find(x => x.id == s.formId);
   if (!f) return alert('แบบฟอร์มต้นฉบับถูกลบแล้ว');
@@ -128,32 +128,29 @@ function view(s) {
   $('#vw').innerHTML = `<div class="np box"><button class="gy" onclick="back()">← กลับ</button><button onclick="print()">🖨 พิมพ์</button><button id="pdfbtn" class="ok" onclick="savePdf('form-'+cur.id)">⬇ ดาวน์โหลด PDF</button></div>
   <div class="np box pn"><h3>พิจารณาคำขอ <small style="font-weight:400;color:#889">รหัส ${s.id} · <span class="tag ${s.status}">${TH[s.status]}</span></small></h3>
    <p style="margin:8px 0 0">1. เลือกตำแหน่งที่จะลงนาม</p>
-   <div class="steps">${f.ap.map((a, i) => `<label class="step"><input type="radio" name="ix" value="${i}" ${i == fi ? 'checked' : ''} onchange="sp()"><b>${esc(a.title)}</b>${chips({ ap: [s.ap[i] || { status: 'pending' }] }, { ap: [{ title: a.pos || 'สถานะ' }] })}</label>`).join('')}</div>
+   <div class="steps">${f.ap.map((a, i) => `<label class="step"><input type="radio" name="ix" value="${i}" ${i == fi ? 'checked' : ''} ><b>${esc(a.title)}</b>${chips({ ap: [s.ap[i] || { status: 'pending' }] }, { ap: [{ title: a.pos || 'สถานะ' }] })}</label>`).join('')}</div>
    <p style="margin:8px 0 0">2. ผลการพิจารณา</p>
    <div class="seg"><label class="sa"><input type="radio" name="st" value="approved" checked>✔ อนุมัติ</label><label class="sr"><input type="radio" name="st" value="rejected">✖ ไม่อนุมัติ</label></div>
-   <textarea id="rs" rows="2" placeholder="เหตุผล / หมายเหตุ (จะแสดงในเอกสารและส่งอีเมลถึงผู้ขอ — จำเป็นเมื่อไม่อนุมัติ)"></textarea>
-   <p style="margin:8px 0 0">3. ลายเซ็น</p>
-   <div class="sigrow"><img id="sp" height="44" hidden style="border:1px dashed #bbb;border-radius:6px;padding:2px"><input type="file" id="sf" accept="image/*" onchange="$('#sp').src=URL.createObjectURL(this.files[0]);$('#sp').hidden=false"><small style="color:#889">ไม่เลือกไฟล์ = ใช้ลายเซ็นเดิมที่เคยอัปโหลดในเครื่องนี้</small></div>
+   <p style="margin:8px 0 0">3. เหตุผล / หมายเหตุ <small style="color:#889">(แสดงในกล่องของผู้อนุมัติบนแบบฟอร์ม ไม่เกิน 120 ตัวอักษร)</small></p>
+   <textarea id="rs" rows="2" maxlength="120" placeholder="เหตุผล / หมายเหตุ (จำเป็นเมื่อไม่อนุมัติ)"></textarea>
+   <p style="margin:8px 0 0">4. ข้อความถึงผู้ขอ <small style="color:#889">(ส่งในอีเมล ไม่บังคับ)</small></p>
+   <textarea id="ms" rows="3" placeholder="พิมพ์ข้อความที่ต้องการแจ้งผู้ขอทางอีเมล"></textarea>
+   <p style="margin:8px 0 0">5. แนบไฟล์ <small style="color:#889">(PDF หรือรูปภาพ ไม่เกิน 5 ไฟล์ รวมไม่เกิน 15 MB)</small></p>
+   <input type="file" id="af" multiple accept=".pdf,image/*" onchange="afl()"><div id="al" style="margin:6px 0;color:#556;font-size:.9rem"></div>
    <button class="ok big" onclick="decide()">บันทึกผลการพิจารณา</button></div>` +
    renderPaper({ template: f.template, approvers: f.ap }, { mode: 'view', data: s.d, approvals: s.ap });
-  sp();
 }
+function afl() { $('#al').textContent = [...$('#af').files].map(f => '📎 ' + f.name + ' (' + (f.size / 1024 | 0) + ' KB)').join('  ·  '); }
 async function decide() {
-  const idx = +document.querySelector('[name=ix]:checked').value, st = document.querySelector('[name=st]:checked').value, reason = $('#rs').value, fl = $('#sf').files[0];
-  const sig = fl ? await sigData(fl) : localStorage['sig' + idx];
-  if (st == 'approved' && !sig) return alert('กรุณาอัปโหลดลายเซ็น');
-  if (st == 'rejected' && !reason.trim()) return alert('กรุณาใส่เหตุผล');
-  if (sig) localStorage['sig' + idx] = sig;
-  if (!confirm('ยืนยันบันทึกผล?')) return;
-  const f = D.forms.find(x => x.id == cur.formId), ap2 = cur.ap.map(a => ({ ...a }));
-  ap2[idx] = { status: st, reason, sig: sig || '' };
-  const fin = ap2.some(a => a.status == 'rejected') ? 'rejected' : ap2.every(a => a.status == 'approved') ? 'approved' : 'pending';
-  showLoading('กำลังบันทึกผลการพิจารณา... (กำลังสร้างไฟล์ PDF และส่งอีเมล อาจใช้เวลาสักครู่)');
+  const idx = +document.querySelector('[name=ix]:checked').value, st = document.querySelector('[name=st]:checked').value, reason = $('#rs').value.trim(), msg = $('#ms').value.trim(), fl = [...$('#af').files];
+  if (st == 'rejected' && !reason) return alert('กรุณาใส่เหตุผลที่ไม่อนุมัติ');
+  if (fl.length > 5 || fl.reduce((a, f) => a + f.size, 0) > 15e6) return alert('แนบได้ไม่เกิน 5 ไฟล์ และขนาดรวมไม่เกิน 15 MB');
+  if (!confirm((st == 'approved' ? 'ยืนยัน "อนุมัติ"' : 'ยืนยัน "ไม่อนุมัติ/ยกเลิก"') + ' และส่งอีเมลแจ้งผู้ขอ?')) return;
+  showLoading('กำลังบันทึกผลการพิจารณา... (กำลังส่งอีเมล อาจใช้เวลาสักครู่)');
   let r;
   try {
-    let pdf = '';
-    if (fin != 'pending') { try { pdf = (await paperPdf({ template: f.template, approvers: f.ap }, { mode: 'view', data: cur.d, approvals: ap2 })).output('datauristring').split(',')[1]; } catch (e) {} }
-    r = await call({ action: 'decide', id: cur.id, idx, status: st, reason, sig, base: baseUrl(), pdf });
+    const files = await Promise.all(fl.map(f => new Promise(res => { const rd = new FileReader(); rd.onload = () => res({ name: f.name, type: f.type || 'application/octet-stream', data: rd.result.split(',')[1] }); rd.readAsDataURL(f); })));
+    r = await call({ action: 'decide', id: cur.id, idx, status: st, reason, msg, files });
   } catch (e) { r = { ok: false, error: 'เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง' }; }
   hideLoading();
   if (!r.ok) return alert(r.error);
@@ -163,13 +160,14 @@ async function decide() {
 function edit(id) {
   editId = id; const f = D.forms.find(x => x.id == id) || D.forms[0] || { ap: [] };
   $('#fn').value = id ? f.name : ''; $('#fa').checked = id ? !!f.active : true;
-  $('#fp').value = f.ap.map(a => [a.title, a.name, a.pos].join('|')).join('\n'); $('#ft').value = f.template || '';
+  $('#fp').value = f.ap.map(a => [a.title, a.name, a.pos].join('|')).join('\n'); $('#ft').value = f.template || ''; $('#ffl').value = JSON.stringify(f.fields ? JSON.parse(f.fields) : DEFAULT_FIELDS, null, 1);
   $('#ed').hidden = false;
 }
 async function save() {
   const ap = $('#fp').value.split('\n').filter(l => l.trim()).map(l => { const [title, name, pos] = l.split('|'); return { title, name: name || '', pos: pos || '' }; });
   if (!$('#fn').value.trim() || !$('#ft').value.includes('{{email|')) return alert('ต้องมีชื่อฟอร์ม และช่อง {{email|email}} ในเทมเพลต');
-  const r = await call({ action: 'saveForm', form: { id: editId, name: $('#fn').value, active: $('#fa').checked, template: $('#ft').value, approvers: JSON.stringify(ap) } });
+  let fj; try { fj = JSON.stringify(JSON.parse($('#ffl').value)); } catch (e) { return alert('รูปแบบช่องกรอก (JSON) ไม่ถูกต้อง'); }
+  const r = await call({ action: 'saveForm', form: { id: editId, name: $('#fn').value, active: $('#fa').checked, template: $('#ft').value, approvers: JSON.stringify(ap), fields: fj } });
   if (!r.ok) return alert(r.error); $('#ed').hidden = true; load();
 }
 load();

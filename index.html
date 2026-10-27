@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>แบบฟอร์มออนไลน์</title><style>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>แบบฟอร์มออนไลน์</title>
+<style>
 .ph{margin:8px 0 2px;color:#223}.pd{color:#667;margin:2px 0 14px;font-size:.95rem}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
 .fc{display:flex;flex-direction:column;gap:8px;min-height:150px;background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 5px #0002;border-top:4px solid #2f5bea;text-decoration:none;color:#223;transition:transform .15s}
@@ -11,22 +12,59 @@
 .tg{color:#fff;border-radius:12px;padding:3px 12px;font-size:.85rem;white-space:nowrap}.tg.pending{background:#e69a00}.tg.approved{background:#1a9b4b}.tg.rejected{background:#d33}
 .cp{display:inline-block;border-radius:12px;padding:2px 10px;font-size:.8rem;margin:2px 4px 2px 0}.cp.pending{background:#fff4dc;color:#8a5b00}.cp.approved{background:#e1f6e9;color:#13703a}.cp.rejected{background:#fde5e5;color:#a12222}
 .er{color:#a12222;margin:12px 0 0}
+/* หน้ากรอกข้อมูล */
+.top{margin:4px 0 14px}.top a{color:#2f5bea;text-decoration:none;font-size:.95rem}.top h1{margin:6px 0 0;font-size:1.3rem;color:#16316b}
+.ec{background:#fff;border-radius:16px;box-shadow:0 1px 5px #0002;padding:22px;margin-bottom:18px}
+.eh{display:flex;gap:12px;align-items:center;border-bottom:1px solid #eceff6;padding-bottom:14px;margin-bottom:18px}
+.eh .ic{flex:none;width:42px;height:42px;border-radius:12px;background:#eef2ff;display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.eh b{display:block;font-size:1.1rem;color:#16316b}.eh small{color:#667}
+.eg{display:grid;grid-template-columns:1fr 1fr;gap:16px}.ef.w{grid-column:1/-1}
+.ef>label{display:block;font-weight:700;font-size:.92rem;margin-bottom:6px;color:#223}.ef>label em{color:#d33;font-style:normal}
+.ef input:not([type=radio]):not([type=checkbox]),.ef textarea,.ef select{width:100%;box-sizing:border-box;padding:11px 14px;border:1px solid #dfe3ee;border-radius:12px;font:inherit;background:#fbfcff}
+.ef input:focus,.ef textarea:focus,.ef select:focus{outline:2px solid #bcd0ff;border-color:#2f5bea}
+.rc{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.rcard{position:relative;display:flex;align-items:center;gap:10px;border:1px solid #dfe3ee;border-radius:12px;padding:14px;cursor:pointer;background:#fff}
+.rcard input{position:absolute;opacity:0}.rcard i{flex:none;width:18px;height:18px;border:2px solid #aab;border-radius:50%;box-sizing:border-box}
+.rcard:has(input:checked){border-color:#2f5bea;background:#eef2ff}.rcard:has(input:checked) i{border:5px solid #2f5bea}
+.chk{display:flex;gap:10px;align-items:flex-start;line-height:1.6;cursor:pointer}.chk input{margin-top:5px;width:18px;height:18px;flex:none}
+.note{background:#fff8e1;border-radius:12px;padding:12px 14px;color:#6b5200;font-size:.9rem;margin-bottom:18px;line-height:1.6}
+.bar2{position:sticky;bottom:0;background:#fffe;backdrop-filter:blur(4px);border-top:1px solid #e3e6ef;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;border-radius:12px 12px 0 0}
+.bar2 span{color:#667;font-size:.9rem}.bar2 button{padding:12px 26px;border:0;border-radius:12px;background:#16316b;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+@media(max-width:640px){.eg{grid-template-columns:1fr}}
 </style></head>
-<body><div id="root" class="np">กำลังโหลด...</div>
+<body><div id="root" style="max-width:860px;margin:0 auto">กำลังโหลด...</div>
 <script src="paper.js"></script>
 <script>
 const API = 'https://script.google.com/macros/s/AKfycbxwkXt331Q4vmwD2fMM9P3eeXXig2FXq2Ll0ujE5ZiT6WZnFHuHpZ4hhIK4Zx8EhYNXPg/exec'; // วาง URL Web App ที่นี่
 const root = document.getElementById('root'), id = new URLSearchParams(location.search).get('form');
+const TH = { pending: 'รออนุมัติ', approved: 'อนุมัติแล้ว', rejected: 'ถูกยกเลิก' }, IC = { pending: '⏳', approved: '✔', rejected: '✖' };
+
+// สร้างหน้ากรอกข้อมูลจากนิยามช่องกรอกของแต่ละฟอร์ม (form.fields)
+function entry(form) {
+  const F = form.fields || DEFAULT_FIELDS, ic = ['👤', '📝', '📎', '📌'];
+  const inp = f => {
+    const rq = f.r === false ? '' : 'required', mx = f.max ? `maxlength="${f.max}"` : '', op = (f.o || '').split(',').map(o => o.trim()).filter(Boolean);
+    if (f.t == 'area') return `<textarea name="${f.k}" rows="3" ${mx} ${rq}></textarea>`;
+    if (f.t == 'select') return `<select name="${f.k}" ${rq}><option value="">-- เลือก --</option>${op.map(o => `<option>${esc(o)}</option>`).join('')}</select>`;
+    if (f.t == 'radio') return `<div class="rc">${op.map((o, i) => `<label class="rcard"><input type="radio" name="${f.k}" value="${esc(o)}" ${i ? '' : rq}><i></i><b>${esc(o)}</b></label>`).join('')}</div>`;
+    if (f.t == 'date') return `<input name="${f.k}" ${rq} inputmode="numeric" maxlength="10" pattern="\\d{2}/\\d{2}/\\d{4}" placeholder="วว/ดด/ปปปป" oninput="fmtD(this)">`;
+    return `<input type="${f.t || 'text'}" name="${f.k}" ${mx} ${rq}>`;
+  };
+  const fh = f => f.t == 'check'
+    ? `<div class="ef w"><label class="chk"><input type="checkbox" name="${f.k}" ${f.r === false ? '' : 'required'}><span>${esc(f.l)}</span></label></div>`
+    : `<div class="ef${f.w == 'f' || f.t == 'radio' ? ' w' : ''}"><label>${esc(f.l)}${f.r === false ? '' : ' <em>*</em>'}</label>${inp(f)}</div>`;
+  return F.sections.map((s, i) => `<div class="ec"><div class="eh"><div class="ic">${ic[i % 4]}</div><div><b>${esc(s.title)}</b><small>${esc(s.sub || '')}</small></div></div><div class="eg">${s.fields.map(fh).join('')}</div></div>`).join('')
+    + (F.note ? `<div class="note">${esc(F.note)}</div>` : '');
+}
+
 (async () => {
   try {
     if (!id) {
-      const r = await (await fetch(API)).json(), TH = { pending: 'รออนุมัติ', approved: 'อนุมัติแล้ว', rejected: 'ถูกยกเลิก' }, IC = { pending: '⏳', approved: '✔', rejected: '✖' };
-      root.style.maxWidth = '900px';
+      const r = await (await fetch(API)).json();
       root.innerHTML = `<h2 class="ph">แบบฟอร์มออนไลน์</h2><p class="pd">เลือกแบบฟอร์มที่ต้องการกรอก หรือตรวจสอบสถานะคำขอที่ส่งไปแล้ว</p>
-        <div class="sc"><h3>🔍 ตรวจสอบสถานะคำขอ</h3><p class="pd">กรอก รหัสเอกสารที่ได้รับในอีเมล, รหัสนักศึกษา หรือชื่อ-นามสกุล (พิมพ์ให้ตรงทั้งหมด)</p>
+        <div class="sc"><h3>🔍 ตรวจสอบสถานะคำขอ</h3><p class="pd">กรอกรหัสเอกสารที่ได้รับในอีเมล, รหัสนักศึกษา หรือชื่อ-นามสกุล (พิมพ์ให้ตรงทั้งหมด)</p>
         <div class="sr"><input id="sq" placeholder="เช่น รหัสเอกสาร / รหัสนักศึกษา / ชื่อ - นามสกุล"><button id="sb">ค้นหา</button></div><div id="res"></div></div>
-        <div class="grid">${r.forms.map(f => `<a class="fc" href="?form=${f.id}"><div class="ic">📝</div><b>${esc(f.name)}</b><span>กรอกแบบฟอร์ม →</span></a>`).join('') || '<p>ยังไม่มีแบบฟอร์มที่เปิดรับ</p>'}</div>
-`;
+        <div class="grid">${r.forms.map(f => `<a class="fc" href="?form=${f.id}"><div class="ic">📝</div><b>${esc(f.name)}</b><span>กรอกแบบฟอร์ม →</span></a>`).join('') || '<p>ยังไม่มีแบบฟอร์มที่เปิดรับ</p>'}</div>`;
       const sq = document.getElementById('sq'), res = document.getElementById('res');
       const go = async () => {
         if (sq.value.trim().length < 3) return res.innerHTML = '<p class="er">กรุณากรอกอย่างน้อย 3 ตัวอักษร</p>';
@@ -41,19 +79,20 @@ const root = document.getElementById('root'), id = new URLSearchParams(location.
       return;
     }
     const r = await (await fetch(API + '?action=form&id=' + id)).json();
-    if (!r.ok) return root.innerHTML = esc(r.error);
-    const form = r.form; document.title = form.name; root.className = '';
-    root.innerHTML = `<form id="f">${renderPaper(form, { mode: 'edit' })}<div class="np"><button style="width:100%;padding:14px;font:inherit;font-size:1.1rem;background:#2f5bea;color:#fff;border:0;border-radius:8px">ส่งแบบฟอร์ม</button></div></form>`;
+    if (!r.ok) return root.innerHTML = `<div class="ec">${esc(r.error)}</div>`;
+    const form = r.form; document.title = form.name;
+    root.innerHTML = `<div class="top"><a href="./">← เลือกแบบฟอร์ม</a><h1>${esc(form.name)}</h1></div>
+      <form id="f">${entry(form)}<div class="bar2"><span>กรอกข้อมูลให้ครบทุกช่องที่มี *</span><button>ส่งแบบฟอร์ม →</button></div></form>`;
     document.getElementById('f').onsubmit = async e => {
       e.preventDefault();
-      const btn = e.target.querySelector('button'); btn.disabled = true; btn.textContent = 'กำลังส่ง...'; showLoading('กำลังส่งแบบฟอร์ม... กรุณารอสักครู่');
-      const data = {};
-      for (const [k, v] of new FormData(e.target).entries()) data[k] = v instanceof File ? await sigData(v) : v;
+      const data = {}; for (const [k, v] of new FormData(e.target).entries()) data[k] = v == 'on' ? 'ยอมรับ' : v;
+      showLoading('กำลังส่งแบบฟอร์ม... กรุณารอสักครู่');
       try {
         const r = await (await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'submit', formId: form.id, data }) })).json();
-        if (!r.ok) throw r.error;
-        hideLoading(); root.className = 'np'; setTimeout(() => alert('บันทึกสำเร็จ'), 100); root.innerHTML = `<h2>ส่งแบบฟอร์มเรียบร้อย ✅</h2>รหัสเอกสาร <b>${r.id}</b> ผลพิจารณาจะแจ้งทางอีเมลที่ระบุ`;
-      } catch (err) { hideLoading(); alert('ส่งไม่สำเร็จ: ' + err); btn.disabled = false; btn.textContent = 'ส่งแบบฟอร์ม'; }
+        hideLoading(); if (!r.ok) throw r.error;
+        root.innerHTML = `<div class="ec" style="text-align:center"><div style="font-size:3rem">✅</div><h2>ส่งแบบฟอร์มเรียบร้อย</h2><p>รหัสเอกสาร <b>${r.id}</b></p><p class="pd">ผลการพิจารณาจะแจ้งทางอีเมลที่ระบุ ตรวจสอบสถานะได้ที่หน้าแรกด้วยรหัสเอกสาร</p><a href="./">← กลับหน้าแรก</a></div>`;
+        scrollTo(0, 0); setTimeout(() => alert('บันทึกสำเร็จ'), 100);
+      } catch (err) { hideLoading(); alert('ส่งไม่สำเร็จ: ' + err); }
     };
   } catch (e) { root.textContent = 'โหลดไม่สำเร็จ ตรวจสอบ API URL'; }
 })();
