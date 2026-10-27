@@ -6,6 +6,7 @@ table{width:100%;border-collapse:collapse;font-size:.92rem}td,th{padding:9px 7px
 button{padding:8px 14px;border:0;border-radius:8px;background:#2f5bea;color:#fff;font:inherit;cursor:pointer;margin:2px}
 .gy{background:#7b8190}.rd{background:#d33}.ok{background:#1a9b4b}.big{width:100%;padding:12px;font-size:1.05rem}
 input,select,textarea{font:inherit;box-sizing:border-box;padding:7px 10px;border:1px solid #c5c9d6;border-radius:8px}textarea{width:100%}
+.dr{flex-basis:100%;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dr input{width:130px;text-align:center}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.bar input[type=search]{flex:1;min-width:180px}
 .tag,.chip{display:inline-block;border-radius:12px;padding:2px 9px;font-size:.78rem;margin:2px 3px 2px 0;white-space:nowrap}
 .tag{color:#fff}.pending{background:#e69a00}.approved{background:#1a9b4b}.rejected{background:#d33}
@@ -27,10 +28,10 @@ input,select,textarea{font:inherit;box-sizing:border-box;padding:7px 10px;border
  <div class="box np"><button onclick="tab(1)">📊 Dashboard</button><button class="gy" onclick="tab(2)">📝 จัดการแบบฟอร์ม</button><button class="gy" onclick="sessionStorage.pw='';localStorage.removeItem('dcache');location.reload()">ออก</button></div>
  <div id="p1">
   <div class="cards" id="stats"></div>
-  <div class="box np bar"><input type="search" id="q" placeholder="🔍 ค้นหา ชื่อ / รหัสนักศึกษา / อีเมล / รหัสอ้างอิง" oninput="rt()">
+  <div class="box np bar"><input type="search" id="q" placeholder="🔍 ค้นหา ชื่อ / รหัสนักศึกษา / อีเมล / รหัสเอกสาร" oninput="rt()">
    <select id="flt" onchange="rt()"></select>
    <select id="ss" onchange="rt()"><option value="">ทุกสถานะ</option><option value="pending">รออนุมัติ</option><option value="approved">อนุมัติ</option><option value="rejected">ยกเลิก</option></select>
-   วันที่ <input type="date" id="d1" onchange="rt()"> ถึง <input type="date" id="d2" onchange="rt()"><button class="gy" onclick="clr()">ล้าง</button></div>
+   <div class="dr">วันที่ <input id="d1" placeholder="วว/ดด/ปปปป" maxlength="10" inputmode="numeric" oninput="fmtD(this);rt()"> ถึง <input id="d2" placeholder="วว/ดด/ปปปป" maxlength="10" inputmode="numeric" oninput="fmtD(this);rt()"><button class="gy" onclick="clr()">ล้าง</button></div></div>
   <div class="box np" style="overflow-x:auto"><table><thead><tr><th>วันที่ส่ง</th><th>แบบฟอร์ม / ผู้ขอ</th><th>สถานะผู้อนุมัติ</th><th>ผลรวม</th><th></th></tr></thead><tbody id="tb"></tbody></table></div>
  </div>
  <div id="p2" hidden>
@@ -51,6 +52,7 @@ let pw = sessionStorage.pw || '', D = {}, cur, editId;
 const baseUrl = () => location.origin + location.pathname.replace(/[^/]*$/, '');
 const copyLink = id => navigator.clipboard.writeText(baseUrl() + '?form=' + id).then(() => alert('คัดลอกลิงก์แล้ว\n' + baseUrl() + '?form=' + id));
 const call = async o => (await fetch(API, { method: 'POST', body: JSON.stringify({ ...o, pw }) })).json();
+const iso = v => { const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/); return m ? (m[3] > 2400 ? m[3] - 543 : m[3]) + '-' + m[2] + '-' + m[1] : ''; };
 const ld = d => { const t = new Date(d); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); };
 
 async function load() {
@@ -76,7 +78,7 @@ function paint(r) {
   rt();
 }
 function flt(full) {
-  const q = $('#q').value.trim().toLowerCase(), a = $('#d1').value, b = $('#d2').value, st = $('#ss').value, f = $('#flt').value;
+  const q = $('#q').value.trim().toLowerCase(), a = iso($('#d1').value), b = iso($('#d2').value), st = $('#ss').value, f = $('#flt').value;
   return D.subs.filter(s => (!q || s.q.includes(q)) && (!a || s.day >= a) && (!b || s.day <= b) && (!full || ((!st || s.status == st) && (!f || s.formId == f))));
 }
 const chips = (s, f) => s.ap.map((a, i) => `<span class="chip ${a.status}">${a.status == 'approved' ? '✔' : a.status == 'rejected' ? '✖' : '⏳'} ${esc(((f && f.ap[i] || {}).title || 'ผู้อนุมัติ ' + (i + 1)).replace('ความเห็นของ', ''))}</span>`).join('<br>');
@@ -118,9 +120,19 @@ async function decide() {
   if (st == 'rejected' && !reason.trim()) return alert('กรุณาใส่เหตุผล');
   if (sig) localStorage['sig' + idx] = sig;
   if (!confirm('ยืนยันบันทึกผล?')) return;
-  const id = cur.id, r = await call({ action: 'decide', id, idx, status: st, reason, sig, base: baseUrl() });
+  const f = D.forms.find(x => x.id == cur.formId), ap2 = cur.ap.map(a => ({ ...a }));
+  ap2[idx] = { status: st, reason, sig: sig || '' };
+  const fin = ap2.some(a => a.status == 'rejected') ? 'rejected' : ap2.every(a => a.status == 'approved') ? 'approved' : 'pending';
+  showLoading('กำลังบันทึกผลการพิจารณา... (กำลังสร้างไฟล์ PDF และส่งอีเมล อาจใช้เวลาสักครู่)');
+  let r;
+  try {
+    let pdf = '';
+    if (fin != 'pending') { try { pdf = (await paperPdf({ template: f.template, approvers: f.ap }, { mode: 'view', data: cur.d, approvals: ap2 })).output('datauristring').split(',')[1]; } catch (e) {} }
+    r = await call({ action: 'decide', id: cur.id, idx, status: st, reason, sig, base: baseUrl(), pdf });
+  } catch (e) { r = { ok: false, error: 'เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง' }; }
+  hideLoading();
   if (!r.ok) return alert(r.error);
-  cur.ap = r.approvals; cur.status = r.status; view(cur); load();
+  cur.ap = r.approvals; cur.status = r.status; view(cur); load(); alert('บันทึกสำเร็จ');
 }
 
 function edit(id) {

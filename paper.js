@@ -27,6 +27,9 @@ body{font-family:Sarabun,'Leelawadee UI',Tahoma,sans-serif;background:#e9ebf0;ma
 .PV{bottom:22px;left:0;right:auto}.PV:not([src]){display:none}
 .view .F{line-height:15px;padding-left:6px}.view .DS .F{padding-left:0}
 .A>img{width:70px!important;height:75px!important;object-fit:contain;display:block}
+.LD{position:fixed;inset:0;background:#fffc;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-size:1.05rem;color:#223;text-align:center;padding:20px}
+.LD i{width:48px;height:48px;border:5px solid #d6dcf5;border-top-color:#2f5bea;border-radius:50%;animation:ldsp .8s linear infinite}
+@keyframes ldsp{to{transform:rotate(360deg)}}
 @media print{body{background:#fff;padding:0}.np{display:none!important}.paper{box-shadow:none;margin:0;zoom:1!important;width:793px;height:1121px}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{size:A4;margin:0}}
 </style>`);
 
@@ -102,7 +105,7 @@ function sigData(file) {
 // พิมพ์วันที่แล้วเติม / ให้อัตโนมัติ เป็น dd/mm/yyyy
 function fmtD(e) { let v = e.value.replace(/\D/g, '').slice(0, 8); if (v.length > 4) v = v.slice(0, 2) + '/' + v.slice(2, 4) + '/' + v.slice(4); else if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2); e.value = v; }
 // จอเล็กให้ย่อกระดาษให้พอดีความกว้าง
-function fitPaper() { const k = Math.min(1, (innerWidth - 20) / 794); document.querySelectorAll('.paper').forEach(p => p.style.zoom = k); }
+function fitPaper() { const k = Math.min(1, (innerWidth - 20) / 794); document.querySelectorAll('.paper:not(.OFF .paper)').forEach(p => p.style.zoom = k); }
 addEventListener('resize', fitPaper); new MutationObserver(fitPaper).observe(document.body, { childList: true, subtree: true });
 
 // ดาวน์โหลดเป็นไฟล์ PDF โดยตรง
@@ -133,3 +136,19 @@ function calib() {
   if (b) r.setProperty('--ft', c(20 * 412 / b).toFixed(2) + 'px');
 }
 calib(); document.fonts.load('14px Sarabun').then(calib, calib); document.fonts.load('700 20px Sarabun').then(calib, calib); document.fonts.ready.then(calib);
+
+// หน้าจอ loading ใช้ร่วมกัน
+function showLoading(m) { hideLoading(); const e = document.createElement('div'); e.id = 'ld'; e.className = 'LD'; e.innerHTML = '<i></i><div>' + esc(m || 'กำลังบันทึก...') + '</div>'; document.body.appendChild(e); }
+function hideLoading() { const e = document.getElementById('ld'); if (e) e.remove(); }
+// สร้าง PDF ของแบบฟอร์ม (ไม่แสดงบนหน้าจอ) ไว้แนบอีเมล
+async function paperPdf(form, o) {
+  if (!window.html2canvas) await loadJs('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+  if (!window.jspdf) await loadJs('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  const h = document.createElement('div'); h.className = 'OFF'; h.style.cssText = 'position:fixed;left:-9999px;top:0'; h.innerHTML = renderPaper(form, o); document.body.appendChild(h);
+  try {
+    await document.fonts.ready; const p = h.firstChild; p.style.zoom = 1;
+    const c = await html2canvas(p, { scale: 1.6, useCORS: true, backgroundColor: '#fff', windowWidth: 900 });
+    const pdf = new jspdf.jsPDF('p', 'mm', 'a4'); let w = 210, ht = c.height * w / c.width; if (ht > 297) { w = w * 297 / ht; ht = 297; }
+    pdf.addImage(c.toDataURL('image/jpeg', .85), 'JPEG', (210 - w) / 2, 0, w, ht); return pdf;
+  } finally { h.remove(); }
+}
