@@ -26,6 +26,7 @@ body{font-family:Sarabun,'Leelawadee UI',Tahoma,sans-serif;background:#e9ebf0;ma
 .SG{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-height:44px;max-width:100%;mix-blend-mode:multiply}
 .PV{bottom:22px;left:0;right:auto}.PV:not([src]){display:none}
 .view .F{line-height:15px;padding-left:6px}.view .DS .F{padding-left:0}
+.A>img{width:70px!important;height:75px!important;object-fit:contain;display:block}
 @media print{body{background:#fff;padding:0}.np{display:none!important}.paper{box-shadow:none;margin:0;zoom:1!important;width:793px;height:1121px}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{size:A4;margin:0}}
 </style>`);
 
