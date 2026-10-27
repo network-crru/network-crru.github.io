@@ -15,7 +15,7 @@ body{font-family:Sarabun,'Leelawadee UI',Tahoma,sans-serif;background:#e9ebf0;ma
 .AR{position:relative;height:46px;margin-top:-9px}
 .AR i{position:absolute;left:0;right:0;border-bottom:1px dotted #000}
 .AR>div,.AR>textarea{position:absolute;left:0;top:0;width:100%;height:50px;padding:8px 0 0;overflow:hidden;resize:none;line-height:21px;font:inherit;line-height:21px;box-sizing:border-box;border:0;background:none}
-.AR>textarea{background:#f1f5ff}
+.AR>textarea{background:#f1f5ff;top:9px;height:44px;padding:0 2px}
 .RO{display:inline-flex;align-items:center;height:24px;position:relative;white-space:nowrap}
 .RO input{position:absolute;opacity:0;left:10px;top:10px}
 .RO i{flex:none;width:24px;height:24px;border:1.5px solid #000;border-radius:50%;box-sizing:border-box;margin-right:12px}
@@ -25,6 +25,7 @@ body{font-family:Sarabun,'Leelawadee UI',Tahoma,sans-serif;background:#e9ebf0;ma
 .AB{position:relative;width:302px;border:1px solid #000;box-sizing:border-box}
 .SG{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-height:44px;max-width:100%;mix-blend-mode:multiply}
 .PV{bottom:22px;left:0;right:auto}.PV:not([src]){display:none}
+.view .F{line-height:15px;padding-left:6px}.view .DS .F{padding-left:0}
 @media print{body{background:#fff;padding:0}.np{display:none!important}.paper{box-shadow:none;margin:0;zoom:1!important;width:793px;height:1121px}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{size:A4;margin:0}}
 </style>`);
 
@@ -76,7 +77,7 @@ function renderPaper(form, o) {
     }
     if (t == 'sig') return `<div class="R">ลงชื่อ<span class="F" style="width:130px">${edit ? `<input type="file" name="${k}" accept="image/*" required onchange="this.nextElementSibling.src=URL.createObjectURL(this.files[0])"><img class="SG PV">` : d[k] ? `<img class="SG" src="${d[k]}">` : ''}</span><span class="LB">${esc(x)}</span></div>
 <div class="R" style="height:19px;margin-left:24px">(${fld(k + 'Name', 'text', '126px')})</div>
-<div class="R" style="height:19px;margin-left:24px">${edit ? `<span class="F" style="width:128px"><input type="date" name="${k}Date" required style="font-size:11px"></span>` : dseg(d[k + 'Date'], 'width:128px')}</div>`;
+<div class="R" style="height:19px;margin-left:24px">${edit ? `<span class="F" style="width:128px"><input name="${k}Date" required inputmode="numeric" maxlength="10" pattern="\\d{2}/\\d{2}/\\d{4}" placeholder="วว/ดด/ปปปป" oninput="fmtD(this)"></span>` : dseg(d[k + 'Date'], 'width:128px')}</div>`;
     if (t == 'radio') return `<div class="R" style="height:24px;align-items:center;margin-top:-2px">` + (x || '').split(',').map((s, i) => `<label class="RO" style="width:${[163, 147, 112][i] ? [163, 147, 112][i] + 'px' : 'auto'}">${edit ? `<input type="radio" name="${k}" value="${esc(s)}" ${i ? '' : 'required'}>` : ''}<i><b${!edit && d[k] == s ? ' class="on"' : ''}></b></i>${esc(s)}</label>`).join('') + `</div>`;
     if (t == 'area') return `<div class="AR"><i style="top:24px"></i><i style="top:45px"></i>${edit ? `<textarea name="${k}" maxlength="200" required></textarea>` : `<div>${esc(d[k])}</div>`}</div>`;
     if (t == 'date') return edit ? `<span class="F" style="${W(x)}"><input name="${k}" required inputmode="numeric" maxlength="10" pattern="\\d{2}/\\d{2}/\\d{4}" placeholder="วว/ดด/ปปปป" oninput="fmtD(this)"></span>` : dseg(d[k], W(x));
