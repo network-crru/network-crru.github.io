@@ -1,5 +1,17 @@
 <!DOCTYPE html>
-<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>แบบฟอร์มออนไลน์</title></head>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>แบบฟอร์มออนไลน์</title><style>
+.ph{margin:8px 0 2px;color:#223}.pd{color:#667;margin:2px 0 14px;font-size:.95rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.fc{display:flex;flex-direction:column;gap:8px;min-height:150px;background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 5px #0002;border-top:4px solid #2f5bea;text-decoration:none;color:#223;transition:transform .15s}
+.fc:hover{transform:translateY(-3px)}.fc .ic{font-size:1.8rem}.fc span{margin-top:auto;color:#2f5bea;font-weight:700}
+.sc{background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 5px #0002;margin-top:18px;border-top:4px solid #1a9b4b}.sc h3{margin:0 0 4px}
+.sr{display:flex;gap:8px}.sr input{flex:1;min-width:0;padding:11px;border:1px solid #c5c9d6;border-radius:8px;font:inherit}
+.sr button{padding:0 22px;border:0;border-radius:8px;background:#1a9b4b;color:#fff;font:inherit;cursor:pointer}
+.ri{border:1px solid #e3e6ef;border-radius:12px;padding:12px;margin-top:12px}.rh{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px}
+.tg{color:#fff;border-radius:12px;padding:3px 12px;font-size:.85rem;white-space:nowrap}.tg.pending{background:#e69a00}.tg.approved{background:#1a9b4b}.tg.rejected{background:#d33}
+.cp{display:inline-block;border-radius:12px;padding:2px 10px;font-size:.8rem;margin:2px 4px 2px 0}.cp.pending{background:#fff4dc;color:#8a5b00}.cp.approved{background:#e1f6e9;color:#13703a}.cp.rejected{background:#fde5e5;color:#a12222}
+.er{color:#a12222;margin:12px 0 0}
+</style></head>
 <body><div id="root" class="np">กำลังโหลด...</div>
 <script src="paper.js"></script>
 <script>
@@ -8,8 +20,24 @@ const root = document.getElementById('root'), id = new URLSearchParams(location.
 (async () => {
   try {
     if (!id) {
-      const r = await (await fetch(API)).json();
-      return root.innerHTML = '<h2>เลือกแบบฟอร์ม</h2>' + r.forms.map(f => `<p><a href="?form=${f.id}">${esc(f.name)}</a></p>`).join('');
+      const r = await (await fetch(API)).json(), TH = { pending: 'รออนุมัติ', approved: 'อนุมัติแล้ว', rejected: 'ถูกยกเลิก' }, IC = { pending: '⏳', approved: '✔', rejected: '✖' };
+      root.style.maxWidth = '900px';
+      root.innerHTML = `<h2 class="ph">แบบฟอร์มออนไลน์</h2><p class="pd">เลือกแบบฟอร์มที่ต้องการกรอก หรือตรวจสอบสถานะคำขอที่ส่งไปแล้ว</p>
+        <div class="grid">${r.forms.map(f => `<a class="fc" href="?form=${f.id}"><div class="ic">📝</div><b>${esc(f.name)}</b><span>กรอกแบบฟอร์ม →</span></a>`).join('') || '<p>ยังไม่มีแบบฟอร์มที่เปิดรับ</p>'}</div>
+        <div class="sc"><h3>🔍 ตรวจสอบสถานะคำขอ</h3><p class="pd">กรอก รหัสอ้างอิงที่ได้รับในอีเมล, รหัสนักศึกษา หรือชื่อ-นามสกุล (พิมพ์ให้ตรงทั้งหมด)</p>
+        <div class="sr"><input id="sq" placeholder="เช่น a1b2c3d4 / 571463012 / ชื่อ นามสกุล"><button id="sb">ค้นหา</button></div><div id="res"></div></div>`;
+      const sq = document.getElementById('sq'), res = document.getElementById('res');
+      const go = async () => {
+        if (sq.value.trim().length < 3) return res.innerHTML = '<p class="er">กรุณากรอกอย่างน้อย 3 ตัวอักษร</p>';
+        res.innerHTML = '<p class="pd">กำลังค้นหา...</p>';
+        try {
+          const q = await (await fetch(API + '?action=status&q=' + encodeURIComponent(sq.value.trim()))).json();
+          res.innerHTML = !q.ok ? `<p class="er">${esc(q.error)}</p>` : q.items.length ? q.items.map(i => `<div class="ri"><div class="rh"><div><b>${esc(i.formName)}</b><br><small>รหัส ${i.id} · ${esc(i.name)} · ส่งเมื่อ ${new Date(i.createdAt).toLocaleDateString('th-TH')}</small></div><span class="tg ${i.status}">${TH[i.status]}</span></div>
+            <div>${i.ap.map(a => `<span class="cp ${a.status}">${IC[a.status]} ${esc(a.title.replace('ความเห็นของ', ''))}</span>`).join('')}</div></div>`).join('') : '<p class="er">ไม่พบคำขอ ตรวจสอบรหัส/ชื่อให้ตรงกับที่กรอกไว้</p>';
+        } catch (e) { res.innerHTML = '<p class="er">ค้นหาไม่สำเร็จ ลองใหม่อีกครั้ง</p>'; }
+      };
+      sb.onclick = go; sq.onkeydown = e => e.key == 'Enter' && go();
+      return;
     }
     const r = await (await fetch(API + '?action=form&id=' + id)).json();
     if (!r.ok) return root.innerHTML = esc(r.error);

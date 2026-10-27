@@ -48,6 +48,8 @@ input,select,textarea{font:inherit;box-sizing:border-box;padding:7px 10px;border
 const API = 'https://script.google.com/macros/s/AKfycbxwkXt331Q4vmwD2fMM9P3eeXXig2FXq2Ll0ujE5ZiT6WZnFHuHpZ4hhIK4Zx8EhYNXPg/exec'; // วาง URL Web App ที่นี่
 const $ = s => document.querySelector(s), TH = { pending: 'รออนุมัติ', approved: 'อนุมัติ', rejected: 'ยกเลิก' };
 let pw = sessionStorage.pw || '', D = {}, cur, editId;
+const baseUrl = () => location.origin + location.pathname.replace(/[^/]*$/, '');
+const copyLink = id => navigator.clipboard.writeText(baseUrl() + '?form=' + id).then(() => alert('คัดลอกลิงก์แล้ว\n' + baseUrl() + '?form=' + id));
 const call = async o => (await fetch(API, { method: 'POST', body: JSON.stringify({ ...o, pw }) })).json();
 const ld = d => { const t = new Date(d); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); };
 
@@ -70,9 +72,7 @@ function paint(r) {
   $('#login').hidden = true; $('#main').hidden = false;
   const fv = $('#flt').value;
   $('#flt').innerHTML = '<option value="">ทุกแบบฟอร์ม</option>' + D.forms.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join(''); $('#flt').value = fv;
-  $('#fl').innerHTML = D.forms.map(f => `<tr><td>${esc(f.name)}${f.active ? '' : ' (ปิด)'}</td><td style="text-align:right">
-   <button onclick="navigator.clipboard.writeText(location.href.replace(/admin\\.html.*$/,'')+'index.html?form=${f.id}').then(()=>alert('คัดลอกลิงก์แล้ว'))">คัดลอกลิงก์</button>
-   <button class="gy" onclick="edit('${f.id}')">แก้ไข</button><button class="rd" onclick="del('${f.id}')">ลบ</button></td></tr>`).join('');
+  $('#fl').innerHTML = D.forms.map(f => `<tr><td>${esc(f.name)}${f.active ? '' : ' (ปิด)'}</td><td style="text-align:right"><button onclick="copyLink('${f.id}')">คัดลอกลิงก์</button></td></tr>`).join('');
   rt();
 }
 function flt(full) {
@@ -118,7 +118,7 @@ async function decide() {
   if (st == 'rejected' && !reason.trim()) return alert('กรุณาใส่เหตุผล');
   if (sig) localStorage['sig' + idx] = sig;
   if (!confirm('ยืนยันบันทึกผล?')) return;
-  const id = cur.id, r = await call({ action: 'decide', id, idx, status: st, reason, sig, base: location.href.replace(/admin\.html.*$/, '') });
+  const id = cur.id, r = await call({ action: 'decide', id, idx, status: st, reason, sig, base: baseUrl() });
   if (!r.ok) return alert(r.error);
   cur.ap = r.approvals; cur.status = r.status; view(cur); load();
 }
@@ -135,6 +135,5 @@ async function save() {
   const r = await call({ action: 'saveForm', form: { id: editId, name: $('#fn').value, active: $('#fa').checked, template: $('#ft').value, approvers: JSON.stringify(ap) } });
   if (!r.ok) return alert(r.error); $('#ed').hidden = true; load();
 }
-async function del(id) { if (confirm('ลบแบบฟอร์มนี้?')) { await call({ action: 'deleteForm', id }); load(); } }
 load();
 </script></body></html>
